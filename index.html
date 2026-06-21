@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRACK & GAIN - Push / Pull Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-bench: #38bdf8;
+            --accent-back: #a855f7;
+            --accent-biceps: #f43f5e;
+            --accent-triceps: #10b981;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --tab-active: #3b82f6;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            padding-bottom: 40px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin: 0 0 5px 0;
+            background: linear-gradient(to left, var(--accent-bench), var(--accent-back));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* טאבים ראשיים */
+        .tabs {
+            display: flex;
+            background-color: var(--card-bg);
+            padding: 6px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background-color: var(--tab-active);
+            color: white;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+        }
+
+        /* בורר סוג אימון פוש / פול */
+        .split-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background-color: rgba(255,255,255,0.03);
+            padding: 4px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .split-btn {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+
+        .split-btn.active[data-split="push"] {
+            background-color: var(--accent-bench);
+            color: var(--bg-color);
+        }
+
+        .split-btn.active[data-split="pull"] {
+            background-color: var(--accent-back);
+            color: white;
+        }
+
+        .page { display: none; }
+        .page.active { display: block; }
+        .split-section { display: none; }
+        .split-section.active { display: block; }
+
+        /* עיצוב כרטיסים וטפסים */
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: bold;
+            margin: 18px 0 10px 0;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-title:first-of-type { margin-top: 0; }
+        
+        .title-bench { color: var(--accent-bench); }
+        .title-back { color: var(--accent-back); }
+        .title-biceps { color: var(--accent-biceps); }
+        .title-triceps { color: var(--accent-triceps); }
+
+        .inputs-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .form-group { flex: 1; }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        input:focus { outline: none; border-color: #64748b; }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 1.05rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+        .btn-push { background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); }
+        .btn-pull { background: linear-gradient(135deg, #7c3aed, #6d28d9); box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3); }
+
+        /* היסטוריה */
+        .history-title {
+            font-size: 1.2rem;
+            margin: 10px 0 15px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .clear-btn { background: transparent; border: none; color: #f43f5e; cursor: pointer; font-size: 0.85rem; }
+
+        .workout-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 15px;
+        }
+
+        .workout-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .workout-date { font-weight: bold; color: var(--text-main); }
+        .type-tag { padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.75rem; }
+        .tag-push { background-color: rgba(56, 189, 248, 0.15); color: var(--accent-bench); }
+        .tag-pull { background-color: rgba(168, 85, 247, 0.15); color: var(--accent-back); }
+
+        .exercise-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            font-size: 0.95rem;
+        }
+
+        .exercise-name { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .dot-bench { background-color: var(--accent-bench); }
+        .dot-back { background-color: var(--accent-back); }
+        .dot-biceps { background-color: var(--accent-biceps); }
+        .dot-triceps { background-color: var(--accent-triceps); }
+
+        .exercise-result { font-weight: bold; }
+        .exercise-result span { font-size: 0.8rem; color: var(--text-muted); font-weight: normal; }
+
+        /* גרפים */
+        .chart-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .chart-card h3 { margin: 0 0 12px 0; font-size: 1rem; font-weight: bold; }
+        .empty-state { text-align: center; color: var(--text-muted); padding: 30px; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>TRACK & GAIN</h1>
+        <p>יומן אימוני Push / Pull חכם</p>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('workoutPage', this)">📝 תיעוד אימון</button>
+        <button class="tab-btn" onclick="switchTab('analyticsPage', this)">📊 גרפים ומדדים</button>
+    </div>
+
+    <div id="workoutPage" class="page active">
+        
+        <div class="split-selector">
+            <button class="split-btn active" data-split="push" onclick="switchSplit('push')">🔥 אימון PUSH (דחיפה)</button>
+            <button class="split-btn" data-split="pull" onclick="switchSplit('pull')">🔮 אימון PULL (משיכה)</button>
+        </div>
+
+        <div class="card">
+            <form id="workoutForm" onsubmit="event.preventDefault();">
+                
+                <div id="pushSections" class="split-section active">
+                    <div class="section-title title-bench">● חזה (Chest)</div>
+                    <div class="inputs-row">
+                        <div class="form-group"><label>בנץ' פרס רגיל (ק"ג)</label><input type="number" id="flatWeight" placeholder="משקל" min="0" step="0.5" inputmode="decimal"></div>
+                        <div class="form-group"><label>חזרות</label><input type="number" id="flatReps" placeholder="חזרות" min="0" inputmode="numeric"></div>
+                    </div>
+                    <div class="inputs-row">
+                        <div class="form-group"><label>שיפוע חיובי (ק"ג)</label><input type="number" id="incWeight" placeholder="משקל" min="0" step="0.5" inputmode="decimal"></div>
+                        <div class="form-group"><label>חזרות</label><input type="number" id="incReps" placeholder="חזרות" min="0" inputmode="numeric"></div>
+                    </div>
+
+                    <div class="section-title title-triceps">● יד אחורית (Triceps)</div>
+                    <div class="inputs-row">
+                        <div class="form-group"><label>משיכת חבל (ק"ג)</label><input type="number" id="ropeWeight" placeholder="משקל" min="0" step="0.5" inputmode="decimal"></div>
+                        <div class="form-group"><label>חזרות</label><input type="number" id="ropeReps" placeholder="חזרות" min="0" inputmode="numeric"></div>
+                    </div>
+                    <div class="inputs-row">
+                        <div class="form-group"><label>Skull Crusher (ק"ג)</label><input type="number" id="skullWeight" placeholder="משקל" min="0" step="0.5" inputmode="decimal"></div>
+                        <div class="form-group"><label>חזרות</label><input type="number" id="skullReps" placeholder="חזרות" min="0" inputmode="numeric"></div>
+                    </div>
+                    
+                    <button type="button" class="submit-btn btn-push" onclick="saveWorkout('PUSH')">סכם אימון PUSH 💪</button>
+                </div>
+
+                <div id="pullSections" class="split-section">
+                    <div class="section-title title-back">● גב (Back)</div>
+                    <div class="inputs-row">
+                        <div class="form-group"><label>פולי עליון (ק"ג)</label><input type="number" id="latWeight" placeholder="משקל" min="0" step="0.5" inputmode="decimal"></div>
+                        <div class="form-group"><label>חזרות</label><input type="number" id="latReps" placeholder="חזרות" min="0" inputmode="numeric"></div>
+                    </div>
+                    <div class="inputs-row">
+                        <div class="form-group"><label>חתירה עם משקולות (ק"ג)</label><input type="number" id="rowWeight" placeholder="משקל" min="0" step="0.5" inputmode="decimal"></div>
+                        <div class="form-group"><label>חזרות</label><input type="number" id="rowReps" placeholder="חזרות" min="0" inputmode="numeric"></div>
+                    </div>
+
+                    <div class="section-title title-biceps">● יד קדמית (Biceps)</div>
+                    <div class="inputs-row">
+                        <div class="form-group"><label>קדמית עם משקולות (ק"ג)</label><input type="number" id="dbCurlWeight" placeholder="משקל" min="0" step="0.5" inputmode="decimal"></div>
+                        <div class="form-group"><label>חזרות</label><input type="number" id="dbCurlReps" placeholder="חזרות" min="0" inputmode="numeric"></div>
+                    </div>
+                    <div class="inputs-row">
+                        <div class="form-group"><label>קדמית עם מוט (ק"ג)</label><input type="number" id="bbCurlWeight" placeholder="משקל" min="0" step="0.5" inputmode="decimal"></div>
+                        <div class="form-group"><label>חזרות</label><input type="number" id="bbCurlReps" placeholder="חזרות" min="0" inputmode="numeric"></div>
+                    </div>
+
+                    <button type="button" class="submit-btn btn-pull" onclick="saveWorkout('PULL')">סכם אימון PULL 🔮</button>
+                </div>
+
+            </form>
+        </div>
+
+        <div class="history-title">
+            <span>היסטוריית אימונים</span>
+            <button class="clear-btn" onclick="clearAll()">מחק הכל</button>
+        </div>
+        <div id="logsContainer"></div>
+    </div>
+
+    <div id="analyticsPage" class="page">
+        <div id="chartsContainer"></div>
+    </div>
+</div>
+
+<script>
+    let db;
+    let charts = {};
+    let currentSplit = 'push';
+
+    const exerciseConfig = {
+        flat: { name: "בנץ' פרס רגיל", color: "#38bdf8", class: "dot-bench" },
+        incline: { name: "שיפוע חיובי", color: "#60a5fa", class: "dot-bench" },
+        ropePush: { name: "יד אחורית חבל", color: "#10b981", class: "dot-triceps" },
+        skullCrush: { name: "Skull Crusher", color: "#34d399", class: "dot-triceps" },
+        latPull: { name: "פולי עליון", color: "#a855f7", class: "dot-back" },
+        dbRow: { name: "חתירה עם משקולות", color: "#c084fc", class: "dot-back" },
+        dbCurl: { name: "יד קדמית משקולות", color: "#fb7185", class: "dot-biceps" },
+        bbCurl: { name: "יד קדמית מוט", color: "#f43f5e", class: "dot-biceps" }
+    };
+
+    const request = indexedDB.open("GymSplitTrackerDB", 1);
+    request.onupgradeneeded = function(e) {
+        db = e.target.result;
+        if (!db.objectStoreNames.contains("sessions")) {
+            db.createObjectStore("sessions", { keyPath: "id" });
+        }
+    };
+    request.onsuccess = function(e) { db = e.target.result; loadData(); };
+
+    function switchTab(pageId, btn) {
+        document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        btn.classList.add('active');
+        if (pageId === 'analyticsPage') loadData();
+    }
+
+    function switchSplit(split) {
+        currentSplit = split;
+        document.querySelectorAll('.split-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector(`.split-btn[data-split="${split}"]`).classList.add('active');
+        
+        document.getElementById('pushSections').classList.toggle('active', split === 'push');
+        document.getElementById('pullSections').classList.toggle('active', split === 'pull');
+    }
+
+    function saveWorkout(splitType) {
+        const getVal = (wId, rId) => {
+            const w = parseFloat(document.getElementById(wId).value) || 0;
+            const r = parseInt(document.getElementById(rId).value) || 0;
+            return w && r ? { weight: w, reps: r } : null;
+        };
+
+        let exercises = {};
+        if (splitType === 'PUSH') {
+            exercises = {
+                flat: getVal('flatWeight', 'flatReps'),
+                incline: getVal('incWeight', 'incReps'),
+                ropePush: getVal('ropeWeight', 'ropeReps'),
+                skullCrush: getVal('skullWeight', 'skullReps')
+            };
+        } else {
+            exercises = {
+                latPull: getVal('latWeight', 'latReps'),
+                dbRow: getVal('rowWeight', 'rowReps'),
+                dbCurl: getVal('dbCurlWeight', 'dbCurlReps'),
+                bbCurl: getVal('bbCurlWeight', 'bbCurlReps')
+            };
+        }
+
+        if (!Object.values(exercises).some(x => x !== null)) {
+            alert('אחי, תכניס לפחות תרגיל אחד כדי לתעד!');
+            return;
+        }
+
+        const session = {
+            id: Date.now(),
+            split: splitType,
+            date: new Date().toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: '2-digit' }),
+            time: new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' }),
+            exercises: exercises
+        };
+
+        const transaction = db.transaction(["sessions"], "readwrite");
+        transaction.objectStore("sessions").add(session);
+        transaction.oncomplete = function() {
+            document.getElementById('workoutForm').reset();
+            loadData();
+            alert(`אימון ${splitType} נשמר! 🔥`);
+        };
+    }
+
+    function loadData() {
+        if (!db) return;
+        const transaction = db.transaction(["sessions"], "readonly");
+        const getAllRequest = transaction.objectStore("sessions").getAll();
+
+        getAllRequest.onsuccess = function() {
+            const sessions = getAllRequest.result.sort((a, b) => b.id - a.id);
+            displayWorkouts(sessions);
+            buildCharts([...sessions].reverse());
+        };
+    }
+
+    function displayWorkouts(sessions) {
+        const container = document.getElementById('logsContainer');
+        if (sessions.length === 0) {
+            container.innerHTML = '<div class="empty-state">אין עדיין אימונים ברשימה.</div>';
+            return;
+        }
+
+        container.innerHTML = '';
+        sessions.forEach(session => {
+            let exercisesHtml = '';
+            
+            Object.keys(exerciseConfig).forEach(key => {
+                const ex = session.exercises && session.exercises[key];
+                if (ex) {
+                    exercisesHtml += `
+                        <div class="exercise-row">
+                            <span class="exercise-name"><span class="dot ${exerciseConfig[key].class}"></span>${exerciseConfig[key].name}</span>
+                            <span class="exercise-result">${ex.weight} <span>ק"ג</span> &times; ${ex.reps} <span>חזרות</span></span>
+                        </div>`;
+                }
+            });
+
+            const tagClass = session.split === 'PUSH' ? 'tag-push' : 'tag-pull';
+
+            container.innerHTML += `
+                <div class="workout-card">
+                    <div class="workout-header">
+                        <span class="workout-date">אימון ב-${session.date} <span class="type-tag ${tagClass}">${session.split}</span></span>
+                        <span>${session.time}</span>
+                    </div>
+                    ${exercisesHtml}
+                </div>`;
+        });
+    }
+
+    function buildCharts(chronologicalSessions) {
+        const container = document.getElementById('chartsContainer');
+        container.innerHTML = '';
+
+        if (chronologicalSessions.length === 0) {
+            container.innerHTML = '<div class="empty-state">אין מספיק נתונים להצגת גרפים.</div>';
+            return;
+        }
+
+        Object.keys(exerciseConfig).forEach(key => {
+            const dataPoints = [];
+            const labels = [];
+
+            chronologicalSessions.forEach(s => {
+                if (s.exercises && s.exercises[key]) {
+                    dataPoints.push(s.exercises[key].weight);
+                    labels.push(s.date);
+                }
+            });
+
+            if (dataPoints.length > 0) {
+                const card = document.createElement('div');
+                card.className = 'chart-card';
+                card.innerHTML = `<h3 style="color: ${exerciseConfig[key].color}">${exerciseConfig[key].name}</h3><canvas id="chart-${key}"></canvas>`;
+                container.appendChild(card);
+
+                const ctx = document.getElementById(`chart-${key}`).getContext('2d');
+                if (charts[key]) charts[key].destroy();
+
+                charts[key] = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: dataPoints,
+                            borderColor: exerciseConfig[key].color,
+                            backgroundColor: exerciseConfig[key].color + '15',
+                            borderWidth: 3,
+                            tension: 0.2,
+                            pointRadius: 4,
+                            pointBackgroundColor: exerciseConfig[key].color
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+                            y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
+                        },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
+        });
+    }
+
+    function clearAll() {
+        if (confirm('למחוק את כל היסטוריית האימונים שלך לצמיתות?')) {
+            const transaction = db.transaction(["sessions"], "readwrite");
+            transaction.objectStore("sessions").clear().onsuccess = function() { loadData(); };
+        }
+    }
+</script>
+</body>
+</html>
