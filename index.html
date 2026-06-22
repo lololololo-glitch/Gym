@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TRACK & GAIN - Focus Workout</title>
+    <title>TRACK & GAIN - Swipeable Workout</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -26,45 +26,45 @@
             background-color: var(--bg-color);
             color: var(--text-main);
             margin: 0;
-            padding: 20px;
+            padding: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        .container {
+        /* מבנה עליון קבוע */
+        .app-header {
             width: 100%;
             max-width: 500px;
-            padding-bottom: 40px;
-        }
-
-        header {
+            padding: 20px 20px 10px 20px;
+            box-sizing: border-box;
             text-align: center;
-            margin-bottom: 15px;
+            background-color: var(--bg-color);
         }
 
-        header h1 {
-            font-size: 2rem;
-            margin: 0 0 5px 0;
+        .app-header h1 {
+            font-size: 1.8rem;
+            margin: 0 0 4px 0;
             background: linear-gradient(to left, var(--accent-bench), var(--accent-back));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             font-weight: 800;
         }
 
-        header p {
+        .app-header p {
             color: var(--text-muted);
-            margin: 0;
-            font-size: 0.95rem;
+            margin: 0 0 15px 0;
+            font-size: 0.9rem;
         }
 
-        /* ניווט טאבים משולש */
+        /* טאבים קבועים למעלה */
         .tabs {
             display: flex;
             background-color: var(--card-bg);
             padding: 4px;
             border-radius: 12px;
-            margin-bottom: 20px;
             border: 1px solid var(--border);
             box-shadow: 0 1px 3px rgba(0,0,0,0.02);
             gap: 2px;
@@ -76,7 +76,7 @@
             background: transparent;
             border: none;
             color: var(--text-muted);
-            font-size: 0.88rem;
+            font-size: 0.85rem;
             font-weight: bold;
             cursor: pointer;
             border-radius: 8px;
@@ -90,10 +90,43 @@
             box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
         }
 
-        .page { display: none; }
-        .page.active { display: block; }
+        /* קונטיינר הגלילה הראשי (החלקה אופקית) */
+        .swipe-container {
+            display: flex;
+            width: 100%;
+            flex: 1;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
 
-        /* מסך בחירת סוג אימון */
+        /* הסתרת פסי גלילה */
+        .swipe-container::-webkit-scrollbar { display: none; }
+        .swipe-container { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* הגדרת כל עמוד כחלון מלא בתוך הגלילה */
+        .page {
+            width: 100%;
+            min-width: 100%;
+            max-width: 100%;
+            height: 100%;
+            scroll-snap-align: start;
+            box-sizing: border-box;
+            padding: 10px 20px 30px 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .page-content {
+            width: 100%;
+            max-width: 460px;
+        }
+
+        /* כרטיסים ורכיבי הממשק */
         .selector-card {
             background-color: var(--card-bg);
             border: 1px solid var(--border);
@@ -101,12 +134,12 @@
             padding: 35px 20px;
             text-align: center;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
-            margin-bottom: 25px;
+            margin-top: 10px;
         }
 
         .selector-card h2 {
             margin-top: 0;
-            font-size: 1.3rem;
+            font-size: 1.25rem;
             margin-bottom: 24px;
             color: #334155;
         }
@@ -127,14 +160,13 @@
         .btn-push-active { background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 4px 14px rgba(2, 132, 199, 0.2); }
         .btn-pull-active { background: linear-gradient(135deg, #7c3aed, #6d28d9); box-shadow: 0 4px 14px rgba(124, 58, 237, 0.2); }
 
-        /* כרטיס אימון מפורט - תרגיל בודד */
         .exercise-step-card {
             background-color: var(--card-bg);
             border: 1px solid var(--border);
             border-radius: 20px;
             padding: 25px;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.02);
-            position: relative;
+            margin-top: 10px;
         }
 
         .step-progress {
@@ -146,7 +178,7 @@
         }
 
         .step-title {
-            font-size: 1.5rem;
+            font-size: 1.45rem;
             font-weight: 800;
             margin: 0 0 15px 0;
         }
@@ -164,11 +196,7 @@
             flex-direction: column;
             gap: 4px;
         }
-        .target-badge span {
-            font-size: 0.8rem;
-            font-weight: normal;
-            opacity: 0.8;
-        }
+        .target-badge span { font-size: 0.8rem; font-weight: normal; opacity: 0.8; }
 
         .inputs-block {
             display: flex;
@@ -177,17 +205,8 @@
             margin-bottom: 25px;
         }
 
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        label {
-            margin-bottom: 8px;
-            font-size: 0.9rem;
-            color: #475569;
-            font-weight: 600;
-        }
+        .form-group { display: flex; flex-direction: column; }
+        label { margin-bottom: 8px; font-size: 0.9rem; color: #475569; font-weight: 600; }
 
         input {
             width: 100%;
@@ -203,234 +222,137 @@
         }
         input:focus { outline: none; border-color: #94a3b8; background-color: #fff; }
 
-        .step-navigation {
-            display: flex;
-            gap: 12px;
-        }
-
-        .nav-btn {
-            flex: 1;
-            padding: 15px;
-            font-size: 1rem;
-            font-weight: bold;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            text-align: center;
-        }
+        .step-navigation { display: flex; gap: 12px; }
+        .nav-btn { flex: 1; padding: 15px; font-size: 1rem; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; text-align: center; }
         .btn-next { background-color: var(--text-main); color: white; }
         .btn-back { background-color: #e2e8f0; color: #475569; }
         .btn-cancel { background-color: transparent; color: #ef4444; font-size: 0.9rem; margin-top: 10px; width: 100%; border: none; cursor: pointer;}
 
-        /* כרטיסי סיכום והשוואה (עמוד אחרון) */
-        .comparison-view {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .last-workout-banner {
-            background: #ffffff;
-            border: 1px solid var(--border);
-            padding: 16px;
-            border-radius: 14px;
-            text-align: center;
-        }
+        /* אימון אחרון והשוואות */
+        .comparison-view { display: flex; flex-direction: column; gap: 16px; margin-top: 10px;}
+        .last-workout-banner { background: #ffffff; border: 1px solid var(--border); padding: 16px; border-radius: 14px; text-align: center; }
         .last-workout-banner h3 { margin: 0 0 4px 0; font-size: 1.1rem; }
         .last-workout-banner p { margin: 0; color: var(--text-muted); font-size: 0.85rem; }
 
-        .comp-card {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 16px;
-        }
-        .comp-title {
-            font-weight: bold;
-            font-size: 1.05rem;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .comp-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            background: #f8fafc;
-            padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 8px;
-        }
+        .comp-card { background: white; border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
+        .comp-title { font-weight: bold; font-size: 1.05rem; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        .comp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 10px; margin-bottom: 8px; }
         .comp-stat { text-align: center; }
         .comp-stat span { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; }
         .comp-stat strong { font-size: 1.1rem; color: var(--text-main); }
-
-        .comp-footer {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.85rem;
-            color: #475569;
-            padding-top: 4px;
-        }
+        .comp-footer { display: flex; justify-content: space-between; font-size: 0.85rem; color: #475569; padding-top: 4px; }
         .comp-footer span strong { color: #0284c7; }
 
-        /* מבנה אלמנטים להיסטוריה */
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            margin: 25px 0 12px 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        /* כותרות סקשנים בהיסטוריה */
+        .section-title { font-size: 1.1rem; font-weight: 700; margin: 20px 0 12px 0; display: flex; justify-content: space-between; align-items: center; }
         .clear-btn { background: transparent; border: none; color: #e11d48; cursor: pointer; font-size: 0.85rem; font-weight: 600; }
 
-        .workout-card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 16px;
-            margin-bottom: 15px;
-        }
-
-        .workout-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid var(--border);
-        }
+        .workout-card { background-color: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 15px; }
+        .workout-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
         .workout-date { font-weight: bold; color: var(--text-main); }
         .type-tag { padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.75rem; }
         .tag-push { background-color: rgba(2, 132, 199, 0.1); color: var(--accent-bench); }
         .tag-pull { background-color: rgba(124, 58, 237, 0.1); color: var(--accent-back); }
 
-        .exercise-block {
-            padding: 10px 0;
-            border-bottom: 1px dashed #f1f5f9;
-        }
+        .exercise-block { padding: 10px 0; border-bottom: 1px dashed #f1f5f9; }
         .exercise-block:last-of-type { border-bottom: none; }
-
-        .exercise-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.95rem;
-        }
+        .exercise-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.95rem; }
         .exercise-name { display: flex; align-items: center; gap: 8px; font-weight: 600; }
         .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
         .dot-bench { background-color: var(--accent-bench); }
         .dot-back { background-color: var(--accent-back); }
         .dot-biceps { background-color: var(--accent-biceps); }
         .dot-triceps { background-color: var(--accent-triceps); }
-
         .exercise-result { font-weight: 700; }
         .exercise-result span { font-size: 0.8rem; color: var(--text-muted); font-weight: normal; }
-
-        .onerm-row {
-            display: flex;
-            justify-content: flex-end;
-            font-size: 0.8rem;
-            color: #475569;
-            margin-top: 4px;
-        }
+        .onerm-row { display: flex; justify-content: flex-end; font-size: 0.8rem; color: #475569; margin-top: 4px; }
         .onerm-row span { color: #0284c7; font-weight: bold; margin-right: 4px; }
 
-        /* גרפים */
-        .chart-card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
-        }
+        .chart-card { background-color: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
         .chart-card h3 { margin: 0 0 12px 0; font-size: 1rem; font-weight: bold; }
         .empty-state { text-align: center; color: var(--text-muted); padding: 40px 20px; font-style: italic; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <header>
+    <div class="app-header">
         <h1>TRACK & GAIN</h1>
-        <p>אימון ממוקד ללא הסחות דעת</p>
-    </header>
+        <p>החלק ימינה ושמאלה כדי לנווט</p>
 
-    <!-- טאבים משולשים -->
-    <div class="tabs" id="mainTabsNav">
-        <button class="tab-btn active" onclick="switchTab('workoutPage', this)">📝 אימון נוכחי</button>
-        <button class="tab-btn" onclick="switchTab('lastWorkoutPage', this)">⚡ אימון אחרון</button>
-        <button class="tab-btn" onclick="switchTab('analyticsPage', this)">📊 גרפים והיסטוריה</button>
+        <div class="tabs" id="mainTabsNav">
+            <button class="tab-btn active" id="tab-0" onclick="scrollToPage(0)">📝 אימון נוכחי</button>
+            <button class="tab-btn" id="tab-1" onclick="scrollToPage(1)">⚡ אימון אחרון</button>
+            <button class="tab-btn" id="tab-2" onclick="scrollToPage(2)">📊 גרפים והיסטוריה</button>
+        </div>
     </div>
 
-    <!-- עמוד 1: תיעוד אימון אקטיבי -->
-    <div id="workoutPage" class="page active">
-        <!-- שלב א': בחירה -->
-        <div id="splitSelectionView" class="selector-card">
-            <h2>איזה אימון נותנים היום?</h2>
-            <button class="big-split-btn btn-push-active" onclick="startWorkoutWorkflow('PUSH')">🔥 אימון PUSH (דחיפה)</button>
-            <button class="big-split-btn btn-pull-active" onclick="startWorkoutWorkflow('PULL')">🔮 אימון PULL (משיכה)</button>
-        </div>
-
-        <!-- שלב ב': ריצת תרגילים -->
-        <div id="exerciseWorkflowView" style="display: none;">
-            <div class="exercise-step-card">
-                <span class="step-progress" id="stepProgressText">תרגיל 1 מתוך 4</span>
-                <h2 class="step-title" id="stepExerciseName">טוען...</h2>
-                
-                <div class="target-badge">
-                    <div id="stepTargetText">🎯 מטרה הבאה: טוען...</div>
+    <div class="swipe-container" id="swipeContainer" onscroll="handleContainerScroll()">
+        
+        <div class="page" id="page-workout" data-index="0">
+            <div class="page-content">
+                <div id="splitSelectionView" class="selector-card">
+                    <h2>איזה אימון נותנים היום?</h2>
+                    <button class="big-split-btn btn-push-active" onclick="startWorkoutWorkflow('PUSH')">🔥 אימון PUSH (דחיפה)</button>
+                    <button class="big-split-btn btn-pull-active" onclick="startWorkoutWorkflow('PULL')">🔮 אימון PULL (משיכה)</button>
                 </div>
 
-                <div class="inputs-block">
-                    <div class="form-group">
-                        <label>משקל שהרמת (ק"ג)</label>
-                        <input type="number" id="stepWeightInput" placeholder="0" min="0" step="0.5" inputmode="decimal">
+                <div id="exerciseWorkflowView" style="display: none;">
+                    <div class="exercise-step-card">
+                        <span class="step-progress" id="stepProgressText">תרגיל 1 מתוך 4</span>
+                        <h2 class="step-title" id="stepExerciseName">טוען...</h2>
+                        
+                        <div class="target-badge">
+                            <div id="stepTargetText">🎯 מטרה הבאה: טוען...</div>
+                        </div>
+
+                        <div class="inputs-block">
+                            <div class="form-group">
+                                <label>משקל שהרמת (ק"ג)</label>
+                                <input type="number" id="stepWeightInput" placeholder="0" min="0" step="0.5" inputmode="decimal">
+                            </div>
+                            <div class="form-group">
+                                <label>כמות חזרות שבוצעו</label>
+                                <input type="number" id="stepRepsInput" placeholder="0" min="0" inputmode="numeric">
+                            </div>
+                        </div>
+
+                        <div class="step-navigation">
+                            <button class="nav-btn btn-back" id="workflowBackBtn" onclick="goToPrevExercise()">אחורה</button>
+                            <button class="nav-btn btn-next" id="workflowNextBtn" onclick="goToNextExercise()">הבא</button>
+                        </div>
+                        
+                        <button class="btn-cancel" onclick="cancelWorkflow()">❌ בטל וצא מהאימון</button>
                     </div>
-                    <div class="form-group">
-                        <label>כמות חזרות שבוצעו</label>
-                        <input type="number" id="stepRepsInput" placeholder="0" min="0" inputmode="numeric">
-                    </div>
                 </div>
-
-                <div class="step-navigation">
-                    <button class="nav-btn btn-back" id="workflowBackBtn" onclick="goToPrevExercise()">אחורה</button>
-                    <button class="nav-btn btn-next" id="workflowNextBtn" onclick="goToNextExercise()">הבא</button>
-                </div>
-                
-                <button class="btn-cancel" onclick="cancelWorkflow()">❌ בטל וצא מהאימון</button>
             </div>
         </div>
-    </div>
 
-    <!-- עמוד 2: השוואה לאימון האחרון -->
-    <div id="lastWorkoutPage" class="page">
-        <div id="lastWorkoutContainer" class="comparison-view"></div>
-    </div>
-
-    <!-- עמוד 3: גרפים והיסטוריית אימונים מלאה -->
-    <div id="analyticsPage" class="page">
-        <div class="section-title">📊 גרפי התקדמות (משקל עבודה)</div>
-        <div id="chartsContainer"></div>
-
-        <div class="section-title">
-            <span>📜 כל האימונים המוקלטים</span>
-            <button class="clear-btn" onclick="clearAll()">מחק הכל</button>
+        <div class="page" id="page-comparison" data-index="1">
+            <div class="page-content">
+                <div id="lastWorkoutContainer" class="comparison-view"></div>
+            </div>
         </div>
-        <div id="logsContainer"></div>
+
+        <div class="page" id="page-analytics" data-index="2">
+            <div class="page-content">
+                <div class="section-title">📊 גרפי התקדמות (משקל עבודה)</div>
+                <div id="chartsContainer"></div>
+
+                <div class="section-title">
+                    <span>📜 כל האימונים המוקלטים</span>
+                    <button class="clear-btn" onclick="clearAll()">מחק הכל</button>
+                </div>
+                <div id="logsContainer"></div>
+            </div>
+        </div>
+
     </div>
-</div>
 
 <script>
     let db;
     let charts = {};
     let allSessionsGlobal = [];
+    let isScrollingProgrammatically = false;
 
     const workflows = {
         'PUSH': ['flat', 'incline', 'ropePush', 'skullCrush'],
@@ -464,19 +386,54 @@
         loadData(); 
     };
 
-    function switchTab(pageId, btn) {
-        if (activeWorkflowType && pageId !== 'workoutPage') {
-            if(!confirm("אתה באמצע תיעוד אימון. לצאת? (הנתונים הנוכחיים לא יישמרו)")) return;
-            cancelWorkflow();
-        }
-        document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
-        document.getElementById(pageId).classList.add('active');
-        btn.classList.add('active');
+    // תיקון GitHub/RTL: גלילה חסינת כיווני שפה בלחיצה על טאב
+    function scrollToPage(pageIndex) {
+        const container = document.getElementById('swipeContainer');
+        const pages = document.querySelectorAll('.page');
+        let targetPage = null;
         
-        if (pageId === 'lastWorkoutPage' || pageId === 'analyticsPage') {
-            loadData();
+        pages.forEach(p => {
+            if(parseInt(p.getAttribute('data-index')) === pageIndex) {
+                targetPage = p;
+            }
+        });
+
+        if (targetPage) {
+            isScrollingProgrammatically = true;
+            targetPage.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+            updateActiveTabBadge(pageIndex);
+            setTimeout(() => { isScrollingProgrammatically = false; }, 600);
         }
+    }
+
+    // תיקון GitHub/RTL: זיהוי העמוד הנוכחי לפי המיקום היחסי הפיזי שלו במסך
+    function handleContainerScroll() {
+        if (isScrollingProgrammatically) return;
+        const container = document.getElementById('swipeContainer');
+        const pages = document.querySelectorAll('.page');
+        const containerRect = container.getBoundingClientRect();
+        
+        let closestPageIndex = 0;
+        let minDistance = Infinity;
+
+        pages.forEach(page => {
+            const pageRect = page.getBoundingClientRect();
+            // המרחק בין מרכז העמוד למרכז הקונטיינר
+            const distance = Math.abs((pageRect.left + pageRect.width/2) - (containerRect.left + containerRect.width/2));
+            
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestPageIndex = parseInt(page.getAttribute('data-index'));
+            }
+        });
+        
+        updateActiveTabBadge(closestPageIndex);
+    }
+
+    function updateActiveTabBadge(index) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        const activeTab = document.getElementById(`tab-${index}`);
+        if(activeTab) activeTab.classList.add('active');
     }
 
     function calculate1RM(weight, reps) {
@@ -485,15 +442,21 @@
         return (weight / (1.0278 - (0.0278 * reps))).toFixed(1);
     }
 
+    function setSwipeLock(lock) {
+        const container = document.getElementById('swipeContainer');
+        container.style.overflowX = lock ? 'hidden' : 'auto';
+    }
+
     function startWorkoutWorkflow(type) {
         activeWorkflowType = type;
         activeStepIndex = 0;
         activeWorkoutData = {};
         
         document.getElementById('splitSelectionView').style.display = 'none';
-        document.getElementById('mainTabsNav').style.display = 'none'; 
+        document.getElementById('mainTabsNav').style.visibility = 'hidden'; 
         document.getElementById('exerciseWorkflowView').style.display = 'block';
         
+        setSwipeLock(true); 
         renderCurrentWorkflowStep();
     }
 
@@ -565,7 +528,7 @@
         if (activeStepIndex < totalSteps - 1) {
             activeStepIndex++;
             renderCurrentWorkflowStep();
-            window.scrollTo(0, 0);
+            document.getElementById('page-workout').scrollTo(0, 0);
         } else {
             finalizeWorkoutWorkflow();
         }
@@ -575,7 +538,7 @@
         if (activeStepIndex > 0) {
             activeStepIndex--;
             renderCurrentWorkflowStep();
-            window.scrollTo(0, 0);
+            document.getElementById('page-workout').scrollTo(0, 0);
         }
     }
 
@@ -583,8 +546,9 @@
         activeWorkflowType = null;
         document.getElementById('exerciseWorkflowView').style.display = 'none';
         document.getElementById('splitSelectionView').style.display = 'block';
-        document.getElementById('mainTabsNav').style.display = 'flex';
-        window.scrollTo(0, 0);
+        document.getElementById('mainTabsNav').style.visibility = 'visible';
+        setSwipeLock(false); 
+        document.getElementById('page-workout').scrollTo(0, 0);
     }
 
     function finalizeWorkoutWorkflow() {
@@ -625,7 +589,6 @@
         };
     }
 
-    // בניית עמוד השוואה חכם לאימון אחרון
     function renderComparisonPage(sessions) {
         const compContainer = document.getElementById('lastWorkoutContainer');
         if (sessions.length === 0) {
@@ -635,8 +598,6 @@
 
         const latestSession = sessions[0];
         const latestSplit = latestSession.split;
-        
-        // מציאת האימון הקודם מאותו סוג בדיוק (השוואה ישירה)
         const previousMatchingSession = sessions.slice(1).find(s => s.split === latestSplit);
 
         let html = `
@@ -664,11 +625,11 @@
                     
                     const rmDiff = (currentRM1 - prevRM1).toFixed(1);
                     if (rmDiff > 0) {
-                        diffText = `<span style="color: #10b981; font-weight: bold;">📈 עלייה של ${rmDiff} ק"ג ב-RM1!</span>`;
+                        diffText = `<span style="color: #10b981; font-weight: bold;">📈 +${rmDiff} ק"ג ב-RM1</span>`;
                     } else if (rmDiff < 0) {
-                        diffText = `<span style="color: #ef4444; font-weight: bold;">📉 ירידה של ${Math.abs(rmDiff)} ק"ג</span>`;
+                        diffText = `<span style="color: #ef4444; font-weight: bold;">📉 -${Math.abs(rmDiff)} ק"ג</span>`;
                     } else {
-                        diffText = `<span style="color: var(--text-muted);">⚖️ שמרת על כוח שווה</span>`;
+                        diffText = `<span style="color: var(--text-muted);">⚖️ ללא שינוי בחוזק</span>`;
                     }
                 }
 
